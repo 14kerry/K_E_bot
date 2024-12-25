@@ -1,0 +1,29 @@
+{
+  "name": "deriv-trading-bot",
+  "version": "1.0.0",
+  "description": "A web-based trading bot application for Deriv.com",
+  "main": "index.html",
+  "scripts": {
+    "start": "python -m http.server 8000",
+    "deploy": "gh-pages -d ."
+  },
+  "dependencies": {
+    "chart.js": "^3.9.1",
+    "@tensorflow/tfjs": "^4.10.0"
+  },
+  "devDependencies": {
+    "gh-pages": "^5.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/14kerry/New-folder.git"
+  },
+  "keywords": [
+    "deriv",
+    "trading",
+    "bot",
+    "oauth"
+  ],
+  "author": "14kerry",
+  "license": "MIT"
+} 

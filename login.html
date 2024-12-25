@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - Deriv Trading Bot</title>
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-hover) 100%);
+        }
+
+        .login-container {
+            background: var(--color-white);
+            padding: 2.5rem;
+            border-radius: var(--border-radius-lg);
+            box-shadow: var(--shadow-lg);
+            text-align: center;
+            max-width: 400px;
+            width: 90%;
+            animation: slideIn 0.3s ease;
+        }
+
+        .features {
+            text-align: left;
+            margin: 1.5rem 0;
+            padding: 1.5rem;
+            background: var(--color-background);
+            border-radius: var(--border-radius-md);
+        }
+
+        .features h2 {
+            color: var(--color-text);
+            margin-bottom: 1rem;
+        }
+
+        .features li {
+            padding: 0.5rem 0;
+            color: var(--color-text-secondary);
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .features li::before {
+            content: "✓";
+            color: var(--color-success);
+            font-weight: bold;
+        }
+
+        .login-info {
+            color: var(--color-text-secondary);
+            font-size: 0.875rem;
+            line-height: 1.6;
+            margin-top: 1.5rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <div class="logo">
+            <h1 class="text-primary">Deriv Trading Bot</h1>
+        </div>
+
+        <div class="features">
+            <h2>Features</h2>
+            <ul>
+                <li>Automated Trading Strategies</li>
+                <li>Real-time Market Analysis</li>
+                <li>Machine Learning Predictions</li>
+                <li>Multiple Trading Types</li>
+                <li>Performance Analytics</li>
+            </ul>
+        </div>
+
+        <div id="errorMessage" class="error-message"></div>
+
+        <button id="loginButton" class="btn btn-primary">Login with Deriv</button>
+
+        <p class="login-info">
+            By logging in, you agree to our Terms of Service and Privacy Policy.
+            Your data will be handled securely.
+        </p>
+    </div>
+
+    <script src="config.js"></script>
+    <script src="oauth.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const oauth = new DerivOAuth({
+                app_id: config.app_id,
+                redirect_uri: window.location.origin + config.base_path + '/redirect.html',
+                post_login_redirect: config.base_path + '/index.html'
+            });
+
+            // Check if already authenticated
+            if (oauth.isAuthenticated()) {
+                window.location.href = config.base_path + '/index.html';
+                return;
+            }
+
+            // Handle login button click
+            document.getElementById('loginButton').addEventListener('click', () => {
+                try {
+                    oauth.initiateLogin();
+                } catch (error) {
+                    const errorMessage = document.getElementById('errorMessage');
+                    errorMessage.textContent = 'Failed to initiate login. Please try again.';
+                    errorMessage.style.display = 'block';
+                }
+            });
+        });
+    </script>
+</body>
+</html> 

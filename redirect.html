@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Authenticating...</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #f0f2f5;
+        }
+        .loader-container {
+            text-align: center;
+        }
+        .loader {
+            border: 4px solid #f3f3f3;
+            border-radius: 50%;
+            border-top: 4px solid #2196F3;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .message {
+            color: #666;
+            margin-top: 20px;
+        }
+        .error {
+            color: #f44336;
+            margin-top: 20px;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="loader-container">
+        <div class="loader"></div>
+        <div class="message">Authenticating your account...</div>
+        <div class="error" id="errorMessage"></div>
+    </div>
+
+    <script src="config.js"></script>
+    <script src="oauth.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            try {
+                // Initialize OAuth handler
+                const oauth = new DerivOAuth({
+                    app_id: config.app_id,
+                    post_login_redirect: config.base_path + '/',
+                    post_logout_redirect: config.base_path + '/login.html'
+                });
+
+                // The OAuth handler will automatically process the redirect
+                // and store the tokens if we're on the redirect page
+            } catch (error) {
+                console.error('Authentication error:', error);
+                const errorMessage = document.getElementById('errorMessage');
+                errorMessage.textContent = 'Authentication failed. Please try again.';
+                errorMessage.style.display = 'block';
+                
+                // Redirect to login page after 3 seconds
+                setTimeout(() => {
+                    window.location.href = config.base_path + '/login.html';
+                }, 3000);
+            }
+        });
+    </script>
+</body>
+</html> 

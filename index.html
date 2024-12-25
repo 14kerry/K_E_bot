@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Local Deriv Trading Bot</title>
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+    <script src="config.js"></script>
+    <script src="oauth.js"></script>
+    <script>
+        // Check authentication on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            const oauth = new DerivOAuth({
+                app_id: config.app_id,
+                redirect_uri: window.location.origin + '/redirect.html'
+            });
+
+            if (!oauth.isAuthenticated()) {
+                window.location.href = '/login.html';
+                return;
+            }
+        });
+    </script>
+    <style>
+        .trading-container {
+            margin: 1.25rem;
+            padding: 1.25rem;
+            border-radius: var(--border-radius-md);
+            background-color: var(--color-white);
+            box-shadow: var(--shadow-md);
+        }
+
+        .digit-controls {
+            margin-top: 1.25rem;
+            background: var(--color-background);
+            padding: 1rem;
+            border-radius: var(--border-radius-md);
+        }
+
+        #connection-status {
+            padding: 0.75rem;
+            background-color: var(--color-info);
+            border-radius: var(--border-radius-sm);
+            color: var(--color-white);
+            font-weight: 600;
+        }
+
+        .digit-display {
+            display: flex;
+            flex-direction: column;
+            gap: 1.25rem;
+            margin: 1.25rem 0;
+            padding: 1rem;
+            background: var(--color-background);
+            border-radius: var(--border-radius-md);
+            box-shadow: var(--shadow-sm);
+        }
+
+        .digit-row {
+            display: flex;
+            justify-content: space-around;
+            gap: 0.75rem;
+        }
+
+        .digit-box {
+            width: 60px;
+            height: 60px;
+            border: 2px solid var(--color-border);
+            border-radius: 50%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.25rem;
+            position: relative;
+            background: var(--color-white);
+            transition: all 0.3s ease;
+            gap: 2px;
+        }
+
+        .digit-box .digit {
+            font-size: 1.25rem;
+            font-weight: 600;
+        }
+
+        .digit-box .percentage {
+            font-size: 0.75rem;
+            opacity: 0.7;
+        }
+
+        .digit-box[data-digit="0"] { color: var(--color-danger); }
+        .digit-box[data-digit="1"] { color: var(--color-primary); }
+        .digit-box[data-digit="2"] { color: var(--color-secondary); }
+        .digit-box[data-digit="3"] { color: var(--color-info); }
+        .digit-box[data-digit="4"] { color: var(--color-success); }
+        .digit-box[data-digit="5"] { color: var(--color-warning); }
+        .digit-box[data-digit="6"] { color: var(--color-primary); }
+        .digit-box[data-digit="7"] { color: var(--color-secondary); }
+        .digit-box[data-digit="8"] { color: var(--color-info); }
+        .digit-box[data-digit="9"] { color: var(--color-success); }
+        
+        .digit-box.active {
+            background-color: var(--color-background);
+            border-color: var(--color-primary);
+            transform: scale(1.1);
+            box-shadow: var(--shadow-md);
+        }
+
+        .digit-cursor {
+            position: absolute;
+            bottom: -25px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: var(--color-primary);
+            font-size: 1.5rem;
+            text-shadow: var(--shadow-sm);
+        }
+
+        .digit-history {
+            margin-top: 1.25rem;
+            padding: 1rem;
+            background: var(--color-background);
+            border-radius: var(--border-radius-md);
+            color: var(--color-text);
+        }
+
+        .history-digits {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 1.5rem;
+            letter-spacing: 0.5rem;
+            color: var(--color-primary);
+            font-weight: 600;
+        }
+
+        .account-balances {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.25rem;
+            margin: 1.25rem 0;
+        }
+
+        .balance-card {
+            padding: 1.25rem;
+            border-radius: var(--border-radius-md);
+            background: var(--color-white);
+            box-shadow: var(--shadow-sm);
+        }
+
+        .balance-card.demo {
+            border-left: 4px solid var(--color-info);
+        }
+
+        .balance-card.real {
+            border-left: 4px solid var(--color-success);
+        }
+
+        .balance-label {
+            font-size: 1rem;
+            color: var(--color-text-secondary);
+            margin-bottom: 0.5rem;
+        }
+
+        .balance-amount {
+            font-size: 1.375rem;
+            font-weight: 600;
+            color: var(--color-text);
+        }
+
+        .trade-buttons {
+            display: flex;
+            gap: 0.75rem;
+            margin: 1rem 0;
+        }
+        
+        .over-button {
+            background: var(--color-success);
+            color: var(--color-white);
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: var(--border-radius-sm);
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            flex: 1;
+            transition: all 0.3s ease;
+        }
+        
+        .under-button {
+            background: var(--color-danger);
+            color: var(--color-white);
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: var(--border-radius-sm);
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            flex: 1;
+            transition: all 0.3s ease;
+        }
+        
+        .over-button:hover {
+            background: var(--color-success);
+            opacity: 0.9;
+            transform: translateY(-1px);
+        }
+        
+        .under-button:hover {
+            background: var(--color-danger);
+            opacity: 0.9;
+            transform: translateY(-1px);
+        }
+
+        .account-details {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.25rem;
+            margin: 1.25rem 0;
+        }
+
+        @media (max-width: 768px) {
+            .digit-row {
+                flex-wrap: wrap;
+                justify-content: center;
+            }
+
+            .digit-box {
+                width: 50px;
+                height: 50px;
+                font-size: 1rem;
+            }
+
+            .account-balances {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 1rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid var(--color-border);
+        }
+
+        .nav-link {
+            padding: 0.5rem 1rem;
+            text-decoration: none;
+            color: var(--color-text);
+            border-radius: var(--border-radius-sm);
+            transition: all 0.3s ease;
+        }
+
+        .nav-link:hover {
+            background: var(--color-background);
+        }
+
+        .nav-link.active {
+            background: var(--color-primary);
+            color: var(--color-white);
+        }
+    </style>
+</head>
+<body>
+    <div class="trading-container">
+        <div class="nav-links mb-3">
+            <a href="api.html" class="nav-link active">Manual Trading</a>
+            <a href="bot.html" class="nav-link">Trading Bot</a>
+        </div>
+
+        <div id="connection-status">Connecting to Deriv...</div>
+        
+        <div class="account-balances">
+            <div class="balance-card demo">
+                <div class="balance-label">Demo Balance</div>
+                <div class="balance-amount" id="demo-balance">USD 0.00</div>
+            </div>
+            <div class="balance-card real">
+                <div class="balance-label">Real Balance</div>
+                <div class="balance-amount" id="real-balance">USD 0.00</div>
+            </div>
+        </div>
+
+        <div class="digit-controls">
+            <select id="market" class="form-control">
+                <option value="R_100">Volatility 100 Index</option>
+                <option value="R_75">Volatility 75 Index</option>
+                <option value="R_50">Volatility 50 Index</option>
+                <option value="R_25">Volatility 25 Index</option>
+                <option value="R_10">Volatility 10 Index</option>
+            </select>
+            
+            <input type="number" id="stake" class="form-control" value="10" min="1" step="1">
+            <button id="connect" class="btn btn-primary">Connect</button>
+        </div>
+
+        <div class="digit-display">
+            <div class="digit-row">
+                <div class="digit-box" data-digit="0">
+                    <span class="digit">0</span>
+                    <span class="percentage">0%</span>
+                </div>
+                <div class="digit-box" data-digit="1">
+                    <span class="digit">1</span>
+                    <span class="percentage">0%</span>
+                </div>
+                <div class="digit-box" data-digit="2">
+                    <span class="digit">2</span>
+                    <span class="percentage">0%</span>
+                </div>
+                <div class="digit-box" data-digit="3">
+                    <span class="digit">3</span>
+                    <span class="percentage">0%</span>
+                </div>
+                <div class="digit-box" data-digit="4">
+                    <span class="digit">4</span>
+                    <span class="percentage">0%</span>
+                </div>
+            </div>
+            <div class="digit-row">
+                <div class="digit-box" data-digit="5">
+                    <span class="digit">5</span>
+                    <span class="percentage">0%</span>
+                </div>
+                <div class="digit-box" data-digit="6">
+                    <span class="digit">6</span>
+                    <span class="percentage">0%</span>
+                </div>
+                <div class="digit-box" data-digit="7">
+                    <span class="digit">7</span>
+                    <span class="percentage">0%</span>
+                </div>
+                <div class="digit-box" data-digit="8">
+                    <span class="digit">8</span>
+                    <span class="percentage">0%</span>
+                </div>
+                <div class="digit-box" data-digit="9">
+                    <span class="digit">9</span>
+                    <span class="percentage">0%</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="trade-buttons">
+            <button class="over-button" id="over">Over</button>
+            <button class="under-button" id="under">Under</button>
+        </div>
+
+        <div class="digit-history">
+            <h3>Last 10 Digits</h3>
+            <div class="history-digits" id="digit-history">---------</div>
+        </div>
+    </div>
+
+    <script src="myapi.js"></script>
+</body>
+</html>

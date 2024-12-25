@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Deriv Trading Bot</title>
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+    <script src="config.js"></script>
+    <script src="oauth.js"></script>
+    <script>
+        // Check authentication on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            const oauth = new DerivOAuth({
+                app_id: config.app_id,
+                redirect_uri: window.location.origin + '/redirect.html'
+            });
+
+            if (!oauth.isAuthenticated()) {
+                window.location.href = '/login.html';
+                return;
+            }
+        });
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        .bot-container {
+            margin: 1.25rem;
+            padding: 1.25rem;
+            border-radius: var(--border-radius-md);
+            background-color: var(--color-white);
+            box-shadow: var(--shadow-md);
+        }
+
+        .bot-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid var(--color-border);
+        }
+
+        .bot-controls {
+            display: flex;
+            gap: 0.75rem;
+        }
+
+        .bot-btn {
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: var(--border-radius-sm);
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .bot-btn.start {
+            background: var(--color-success);
+            color: var(--color-white);
+        }
+
+        .bot-btn.stop {
+            background: var(--color-danger);
+            color: var(--color-white);
+        }
+
+        .bot-btn.reset {
+            background: var(--color-warning);
+            color: var(--color-white);
+        }
+
+        .bot-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .bot-activity {
+            background: var(--color-background);
+            border-radius: var(--border-radius-md);
+            padding: 1.25rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .activity-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+
+        .activity-status {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .status-indicator {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: var(--color-danger);
+        }
+
+        .status-indicator.active {
+            background: var(--color-success);
+        }
+
+        .activity-log {
+            background: var(--color-white);
+            border-radius: var(--border-radius-sm);
+            padding: 1rem;
+            max-height: 300px;
+            overflow-y: auto;
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 0.875rem;
+            line-height: 1.5;
+        }
+
+        .activity-message {
+            padding: 0.5rem;
+            border-bottom: 1px solid var(--color-border);
+        }
+
+        .activity-message:last-child {
+            border-bottom: none;
+        }
+
+        .strategy-section {
+            background: var(--color-white);
+            border-radius: var(--border-radius-md);
+            padding: 1.25rem;
+            margin-top: 1.5rem;
+        }
+
+        .strategy-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.25rem;
+            margin-top: 1rem;
+        }
+
+        .strategy-item {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .strategy-item label {
+            color: var(--color-text-secondary);
+            font-size: 0.875rem;
+        }
+
+        .strategy-toggles {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1.25rem;
+            margin-top: 1.5rem;
+            padding-top: 1rem;
+            border-top: 1px solid var(--color-border);
+        }
+
+        .strategy-toggle {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .account-balances {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.25rem;
+            margin: 1.25rem 0;
+        }
+
+        .balance-card {
+            padding: 1.25rem;
+            border-radius: var(--border-radius-md);
+            background: var(--color-white);
+            box-shadow: var(--shadow-sm);
+        }
+
+        .balance-card.demo {
+            border-left: 4px solid var(--color-info);
+        }
+
+        .balance-card.real {
+            border-left: 4px solid var(--color-success);
+        }
+
+        .balance-label {
+            font-size: 1rem;
+            color: var(--color-text-secondary);
+            margin-bottom: 0.5rem;
+        }
+
+        .balance-amount {
+            font-size: 1.375rem;
+            font-weight: 600;
+            color: var(--color-text);
+        }
+
+        @media (max-width: 768px) {
+            .bot-header {
+                flex-direction: column;
+                gap: 1rem;
+                text-align: center;
+            }
+
+            .strategy-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .account-balances {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 1rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid var(--color-border);
+        }
+
+        .nav-link {
+            padding: 0.5rem 1rem;
+            text-decoration: none;
+            color: var(--color-text);
+            border-radius: var(--border-radius-sm);
+            transition: all 0.3s ease;
+        }
+
+        .nav-link:hover {
+            background: var(--color-background);
+        }
+
+        .nav-link.active {
+            background: var(--color-primary);
+            color: var(--color-white);
+        }
+    </style>
+</head>
+<body>
+    <div class="bot-container">
+        <div class="nav-links mb-3">
+            <a href="javascript:void(0)" onclick="window.location.href = config.base_path + '/index.html'" class="nav-link">Manual Trading</a>
+            <a href="javascript:void(0)" onclick="window.location.href = config.base_path + '/bot.html'" class="nav-link active">Trading Bot</a>
+        </div>
+
+        <div id="connection-status">Connecting to Deriv...</div>
+
+        <div class="account-balances">
+            <div class="balance-card demo">
+                <div class="balance-label">Demo Balance</div>
+                <div class="balance-amount" id="demo-balance">USD 0.00</div>
+            </div>
+            <div class="balance-card real">
+                <div class="balance-label">Real Balance</div>
+                <div class="balance-amount" id="real-balance">USD 0.00</div>
+            </div>
+        </div>
+
+        <div class="bot-header">
+            <h2>Trading Bot Control Panel</h2>
+            <div class="bot-controls">
+                <button id="startBot" class="bot-btn start">Start Bot</button>
+                <button id="stopBot" class="bot-btn stop" disabled>Stop Bot</button>
+                <button id="resetBot" class="bot-btn reset">Reset</button>
+            </div>
+        </div>
+
+        <div class="bot-activity">
+            <div class="activity-header">
+                <h3>Bot Activity</h3>
+                <div class="activity-status">
+                    <span class="status-indicator"></span>
+                    <span id="botStatus">Inactive</span>
+                </div>
+            </div>
+            <div class="activity-log" id="activityLog">
+                <div class="activity-message">Bot is ready to start...</div>
+            </div>
+        </div>
+
+        <div class="strategy-section">
+            <h3>Strategy Settings</h3>
+            <div class="strategy-grid">
+                <div class="strategy-item">
+                    <label for="accountType">Account Type</label>
+                    <select id="accountType" class="form-control">
+                        <option value="demo">Demo Account</option>
+                        <option value="real">Real Account</option>
+                    </select>
+                </div>
+                <div class="strategy-item">
+                    <label for="symbol">Symbol</label>
+                    <select id="symbol" class="form-control">
+                        <option value="R_100">Volatility 100 (1s)</option>
+                        <option value="R_75">Volatility 75 (1s)</option>
+                        <option value="R_50">Volatility 50 (1s)</option>
+                        <option value="R_25">Volatility 25 (1s)</option>
+                        <option value="R_10">Volatility 10 (1s)</option>
+                    </select>
+                </div>
+                <div class="strategy-item">
+                    <label for="tradingType">Trading Type</label>
+                    <select id="tradingType" class="form-control">
+                        <option value="DIGITOVER">Digit Over/Under</option>
+                        <option value="DIGITEVEN">Even/Odd</option>
+                        <option value="CALL">Rise/Fall</option>
+                    </select>
+                </div>
+                <div class="strategy-item">
+                    <label for="stakeAmount">Stake Amount ($)</label>
+                    <input type="number" id="stakeAmount" class="form-control" value="1" min="1" step="1">
+                </div>
+                <div class="strategy-item">
+                    <label for="stopLoss">Stop Loss ($)</label>
+                    <input type="number" id="stopLoss" class="form-control" value="10" min="0" step="1">
+                </div>
+                <div class="strategy-item">
+                    <label for="takeProfit">Take Profit ($)</label>
+                    <input type="number" id="takeProfit" class="form-control" value="20" min="0" step="1">
+                </div>
+                <div class="strategy-item">
+                    <label for="martingale">Martingale Factor</label>
+                    <input type="number" id="martingale" class="form-control" value="2" min="1" step="0.1">
+                </div>
+            </div>
+            <div class="strategy-toggles">
+                <div class="strategy-toggle">
+                    <input type="checkbox" id="mlStrategy" checked>
+                    <label for="mlStrategy">ML Strategy</label>
+                </div>
+                <div class="strategy-toggle">
+                    <input type="checkbox" id="patternStrategy" checked>
+                    <label for="patternStrategy">Pattern Recognition</label>
+                </div>
+                <div class="strategy-toggle">
+                    <input type="checkbox" id="trendStrategy" checked>
+                    <label for="trendStrategy">Trend Following</label>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="bot.js"></script>
+</body>
+</html> 
