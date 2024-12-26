@@ -1,6 +1,4 @@
-# Deriv Trading Bot Web Application
 
-A web-based trading bot application for Deriv.com that features automated trading strategies, real-time market analysis, and machine learning predictions.
 
 ## Authentication & Authorization
 
