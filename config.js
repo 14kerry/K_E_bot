@@ -1,5 +1,5 @@
 const config = {
-    app_id: '1089',
+    app_id: '64225',
 token: 'kOIH9bYFuNuWKU3',
 oauth: {
     redirect_uri: 'https://14kerry.github.io/K_E_bot/redirect.html',
