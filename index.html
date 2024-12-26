@@ -13,7 +13,8 @@
         document.addEventListener('DOMContentLoaded', () => {
             const oauth = new DerivOAuth({
                 app_id: config.app_id,
-                redirect_uri: window.location.origin + '/redirect.html'
+                redirect_uri: 'https://playful-naiad-8d08a1.netlify.app/redirect.html'
+            
             });
 
             if (!oauth.isAuthenticated()) {
