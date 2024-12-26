@@ -4,24 +4,7 @@
 
 ### OAuth Authentication
 
-1. Configure OAuth Redirect:
-   - Set up your redirect URL in the Deriv API settings
-   - Format: `https://[YOUR_WEBSITE_URL]/redirect/`
-   - Example redirect response:
-     ```
-     /redirect/?acct1=cr799393&token1=a1-f7pnteezo4jzhpxclctizt27hyeot&cur1=usd&
-     acct2=vrtc1859315&token2=a1clwe3vfuuus5kraceykdsoqm4snfq&cur2=usd
-     ```
-
-2. Handle OAuth Parameters:
-   - Account IDs (acct1, acct2)
-   - API Tokens (token1, token2)
-   - Account Currencies (cur1, cur2)
-
-3. Implement Token Storage:
-   ```javascript
-   // Example token handling
-   class TokenManager {
+1. Configur
        static storeTokens(params) {
            const accounts = {};
            let i = 1;
